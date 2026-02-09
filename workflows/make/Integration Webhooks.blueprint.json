@@ -6,7 +6,7 @@
             "module": "gateway:CustomWebHook",
             "version": 1,
             "parameters": {
-                "hook": 1816094,
+                "hook": "YOUR_MAKE_WEBHOOK_ID",
                 "maxResults": 1
             },
             "mapper": {},
@@ -64,7 +64,7 @@
             "module": "linkedin:CreatePost",
             "version": 2,
             "parameters": {
-                "__IMTCONN__": 7183415
+                "__IMTCONN__": "YOUR_LINKEDIN_CONNECTION_ID"
             },
             "mapper": {
                 "content": "{{1.content}}",
@@ -240,7 +240,7 @@
         "designer": {
             "orphans": []
         },
-        "zone": "us2.make.com",
+        "zone": "YOUR_MAKE_ZONE.make.com",
         "notes": []
     }
 }

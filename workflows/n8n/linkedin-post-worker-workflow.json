@@ -98,7 +98,7 @@
         "select": "channel",
         "channelId": {
           "__rl": true,
-          "value": "U09FBG483KR",
+          "value": "YOUR_SLACK_CHANNEL_ID",
           "mode": "id"
         },
         "text": "={{ '[TEST] LinkedIn Post Would Go Live Now!\\n\\nSlot ' + $json.slot + ':\\n\\n' + $json.formatted_content.substring(0, 500) + ($json.formatted_content.length > 500 ? '...' : '') }}",
@@ -111,15 +111,15 @@
       "position": [1050, 200],
       "credentials": {
         "slackApi": {
-          "id": "slack-api-cred",
-          "name": "Slack API"
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Your Slack API Credential"
         }
       }
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://hook.us2.make.com/sf65376v48v47jx6wnz3pkiget52n8t2",
+        "url": "https://hook.us2.make.com/YOUR_MAKE_WEBHOOK_ID",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ content: $json.formatted_content, scheduled_datetime: $json.scheduled_datetime, slot: $json.slot, posted_at: new Date().toISOString() }) }}"
@@ -137,7 +137,7 @@
         "select": "channel",
         "channelId": {
           "__rl": true,
-          "value": "U09FBG483KR",
+          "value": "YOUR_SLACK_CHANNEL_ID",
           "mode": "id"
         },
         "text": "={{ 'LinkedIn Post Live!\\n\\nSlot ' + $json.slot + ':\\n\\n' + $json.formatted_content.substring(0, 500) + ($json.formatted_content.length > 500 ? '...' : '') }}",
@@ -150,8 +150,8 @@
       "position": [1250, 400],
       "credentials": {
         "slackApi": {
-          "id": "slack-api-cred",
-          "name": "Slack API"
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Your Slack API Credential"
         }
       }
     }

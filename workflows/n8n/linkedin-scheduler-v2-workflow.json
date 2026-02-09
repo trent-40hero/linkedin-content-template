@@ -53,7 +53,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "rX2aCGT7unCjakI5",
+          "value": "YOUR_WORKER_WORKFLOW_ID",
           "mode": "id"
         },
         "mode": "each",
