@@ -1,0 +1,228 @@
+{
+  "name": "LinkedIn Post Worker",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "trigger_1",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.scheduled_datetime }}"
+      },
+      "id": "wait_1",
+      "name": "Wait Until Scheduled",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "content",
+              "name": "formatted_content",
+              "type": "string",
+              "value": "={{ $json.content }}\n\n{{ ($json.hashtags || []).filter(h => h && h.trim()).map(h => '#' + h.trim()).join(' ') }}"
+            },
+            {
+              "id": "scheduled",
+              "name": "scheduled_datetime",
+              "type": "string",
+              "value": "={{ $json.scheduled_datetime }}"
+            },
+            {
+              "id": "slot",
+              "name": "slot",
+              "type": "number",
+              "value": "={{ $json.slot }}"
+            },
+            {
+              "id": "test_mode",
+              "name": "test_mode",
+              "type": "boolean",
+              "value": "={{ $json.test_mode || false }}"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      },
+      "id": "format_1",
+      "name": "Format Content",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "test_mode_check",
+              "leftValue": "={{ $json.test_mode }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "if_test_mode",
+      "name": "Test Mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "U09FBG483KR",
+          "mode": "id"
+        },
+        "text": "={{ '[TEST] LinkedIn Post Would Go Live Now!\\n\\nSlot ' + $json.slot + ':\\n\\n' + $json.formatted_content.substring(0, 500) + ($json.formatted_content.length > 500 ? '...' : '') }}",
+        "otherOptions": {}
+      },
+      "id": "slack_notify_test",
+      "name": "Notify Slack (Test)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [1050, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-api-cred",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hook.us2.make.com/sf65376v48v47jx6wnz3pkiget52n8t2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ content: $json.formatted_content, scheduled_datetime: $json.scheduled_datetime, slot: $json.slot, posted_at: new Date().toISOString() }) }}"
+      },
+      "id": "http_1",
+      "name": "Post to Make.com",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "U09FBG483KR",
+          "mode": "id"
+        },
+        "text": "={{ 'LinkedIn Post Live!\\n\\nSlot ' + $json.slot + ':\\n\\n' + $json.formatted_content.substring(0, 500) + ($json.formatted_content.length > 500 ? '...' : '') }}",
+        "otherOptions": {}
+      },
+      "id": "slack_notify_prod",
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [1250, 400],
+      "credentials": {
+        "slackApi": {
+          "id": "slack-api-cred",
+          "name": "Slack API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait Until Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Format Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Content": {
+      "main": [
+        [
+          {
+            "node": "Test Mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Mode?": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack (Test)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to Make.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Make.com": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/New_York",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  }
+}

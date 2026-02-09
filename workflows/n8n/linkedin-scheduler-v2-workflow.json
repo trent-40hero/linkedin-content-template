@@ -1,0 +1,122 @@
+{
+  "name": "LinkedIn Post Scheduler v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "linkedin-posts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook_1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "linkedin-posts"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Get the actual payload from webhook body\nconst webhookData = $input.first().json;\nconst data = webhookData.body || webhookData;\n\n// Validate structure\nif (!data.week || !data.posts || !Array.isArray(data.posts)) {\n  throw new Error('Invalid payload: missing week or posts array');\n}\n\nif (data.posts.length === 0) {\n  throw new Error('No posts in payload');\n}\n\nconst now = new Date();\nconst errors = [];\n\nfor (const post of data.posts) {\n  const slot = post.slot || 'unknown';\n  \n  if (!post.scheduled_datetime) {\n    errors.push(`Post ${slot}: missing scheduled_datetime`);\n    continue;\n  }\n  if (!post.content) {\n    errors.push(`Post ${slot}: missing content`);\n    continue;\n  }\n  \n  const scheduledTime = new Date(post.scheduled_datetime);\n  if (scheduledTime <= now) {\n    errors.push(`Post ${slot}: scheduled time is in the past`);\n  }\n  \n  if (post.metadata?.word_count > 300) {\n    errors.push(`Post ${slot}: exceeds 300 word limit`);\n  }\n  \n  if (post.hashtags && post.hashtags.length > 3) {\n    errors.push(`Post ${slot}: more than 3 hashtags`);\n  }\n}\n\nif (errors.length > 0) {\n  throw new Error('Validation failed:\\n' + errors.join('\\n'));\n}\n\nreturn [{\n  json: {\n    ...data,\n    validated: true,\n    post_count: data.posts.length\n  }\n}];"
+      },
+      "id": "validate_1",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, posts_scheduled: $json.post_count, week: $json.week }) }}"
+      },
+      "id": "respond_1",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "posts",
+        "include": "noOtherFields"
+      },
+      "id": "split_1",
+      "name": "Split Posts",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "rX2aCGT7unCjakI5",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "execute_worker",
+      "name": "Execute Worker",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Success": {
+      "main": [
+        [
+          {
+            "node": "Split Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Posts": {
+      "main": [
+        [
+          {
+            "node": "Execute Worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/New_York",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  }
+}
